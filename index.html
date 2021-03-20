@@ -1,0 +1,76 @@
+<html>
+<body>
+  <canvas id="fire" width="500" height="150"></canvas>
+  <script>
+    const width = 500, height = 150
+    const xyToBufferPos = (x, y) => x + width * y
+
+    palette = [0, 0x070707, 0x1f0707, 0x2f0f07, 0x470f07, 0x571707, 0x671f07,
+      0x771f07, 0x8f2707, 0x9f2f07, 0xaf3f07, 0xbf4707, 0xc74707, 0xDF4F07,
+      0xDF5707, 0xDF5707, 0xD75F07, 0xD7670F, 0xcf6f0f, 0xcf770f, 0xcf7f0f,
+      0xCF8717, 0xC78717, 0xC78F17, 0xC7971F, 0xBF9F1F, 0xBF9F1F, 0xBFA727,
+      0xBFA727, 0xBFAF2F, 0xB7AF2F, 0xB7B72F, 0xB7B737, 0xCFCF6F, 0xDFDF9F,
+      0xEFEFC7, 0xFFFFFF]
+
+    const canvas = document.getElementById('fire')
+    const ctx = canvas.getContext('2d', { alpha: false })
+    const buffer = new Array(width * height)
+
+    function init() {
+      for (x = 0 ; x < width; x++) {
+        buffer[xyToBufferPos(x, height - 1)] = 36;
+      }
+    }
+
+    function frame() {
+      const pixelData = ctx.getImageData(0, 0, width, height)
+      for (x = 0 ; x < width; x++) {
+        for (y = 1; y < height; y++) {
+          spreadFire(buffer, x, y)
+          setPixel(pixelData.data, buffer, x, y)
+        }
+      }
+
+      ctx.putImageData(pixelData, 0, 0)
+      requestAnimationFrame(frame, canvas)
+
+      function spreadFire(buffer, sx, sy) {
+        const rand3 = Math.floor(Math.random() * 3)
+        const rand1 = Math.floor(Math.random() * 2)
+        const dx = sx + rand3 - 1;
+        const dy = sy - 1;
+        from = xyToBufferPos(sx, sy)
+
+        const color = getColor(buffer, sx, sy)
+        setColor(buffer, fade(color, rand1 & 1), dx, dy)
+      }
+
+      function getColor(data, x, y) {
+        return data[xyToBufferPos(x, y)]
+      }
+
+      function setColor(data, color, x, y) {
+        data[xyToBufferPos(x, y)] = color
+      }
+
+      function fade(color, fadeAmount) {
+        return Math.max(color - fadeAmount, 0)
+      }
+
+      function setPixel(data, buffer, x, y) {
+        const pos = xyToBufferPos(x,y)
+        const dataPos = pos * 4
+        data[dataPos] = palette[buffer[pos]] >> 16 & 255
+        data[dataPos + 1] = palette[buffer[pos]] >> 8 & 255
+        data[dataPos + 2] = palette[buffer[pos]] & 255
+        data[dataPos + 3] = 255
+      }
+    }
+
+    init()
+    frame()
+
+  </script>
+
+</body>
+</html>
